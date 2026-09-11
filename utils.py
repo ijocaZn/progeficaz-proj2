@@ -1,7 +1,7 @@
 import os
 import mysql.connector
 
-def load_db():
+def conectar_banco():
     conn = mysql.connector.connect(
         host=os.getenv("DB_HOST"),
         user=os.getenv("DB_USER"),
@@ -12,3 +12,11 @@ def load_db():
     )
     return conn
 
+def listar_imoveis():
+    conn = conectar_banco()
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute("SELECT * FROM imoveis")
+    imoveis = cursor.fetchall()
+    cursor.close()
+    conn.close()
+    return imoveis
