@@ -167,7 +167,7 @@ def test_atualizar_imovel_ok(mock_conectar_banco, client):
     assert response.get_json() == {"mensagem": "imovel atualizado com sucesso"}
 
     mock_cursor.execute.assert_called_once_with(
-        "UPDATE imoveis SET logradouro = ?, tipo_logradouro = ?, bairro = ?, cidade = ?, cep = ?, tipo = ?, valor = ?, data_aquisicao = ? WHERE id = ?",
+        "UPDATE imoveis SET logradouro = %s, tipo_logradouro = %s, bairro = %s, cidade = %s, cep = %s, tipo = %s, valor = %s, data_aquisicao = %s WHERE id = %s",
         ("Novo logradouro", "nova tipo", "novo bairro", "Nova Cidade", "00001", "apartamento", 235531.1, "2017-07-29", 1),
     )
     mock_conn.commit.assert_called_once()
@@ -191,7 +191,7 @@ def test_atualizar_imovel_not_found(mock_conectar_banco, client):
     assert response.get_json() == {"erro": "imovel não encontrado"}
 
     mock_cursor.execute.assert_called_once_with(
-        "UPDATE imoveis SET logradouro = ?, tipo_logradouro = ?, bairro = ?, cidade = ?, cep = ?, tipo = ?, valor = ?, data_aquisicao = ? WHERE id = ?",
+        "UPDATE imoveis SET logradouro = %s, tipo_logradouro = %s, bairro = %s, cidade = %s, cep = %s, tipo = %s, valor = %s, data_aquisicao = %s WHERE id = %s",
         ("Novo logradouro", "nova tipo", "novo bairro", "Nova Cidade", "00001", "apartamento", 235531.1, "2017-07-29", 999),
     )
     mock_conn.commit.assert_called_once()

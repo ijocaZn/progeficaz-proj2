@@ -27,5 +27,15 @@ def criar_imovel():
     imovel_id = utils.criar_imovel(imovel)
     return jsonify({"id": imovel_id}), 201
 
+@app.route('/imoveis/<int:id>', methods=['PUT'])
+def atualizar_imovel(id):
+    imovel = request.get_json()
+    if not all(campo in imovel for campo in campos_obrigatorios):
+        return jsonify({"erro": "Campos obrigatórios: " + ", ".join(campos_obrigatorios)}), 400
+    updated_rows = utils.atualizar_imovel(id, imovel)
+    if updated_rows == 0:
+        return jsonify({"erro": "imovel não encontrado"}), 404
+    return jsonify({"mensagem": "imovel atualizado com sucesso"}), 200
+
 if __name__ == '__main__':
     app.run(debug=True)
