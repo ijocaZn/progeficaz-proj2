@@ -1,8 +1,27 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, url_for
 import utils
 app = Flask(__name__)
 
 campos_obrigatorios = ["logradouro", "tipo_logradouro", "bairro", "cidade", "cep", "tipo", "valor", "data_aquisicao"]
+
+def links_imovel(imovel_id):
+    url = url_for("listar_imovel_por_id", id=imovel_id)
+    return {
+        "self": {"href": url, "method": "GET"},
+        "update": {"href": url, "method": "PUT"},
+        "delete": {"href": url, "method": "DELETE"},
+    }
+
+def representar_imovel(imovel):
+    representacao = dict(imovel)
+    representacao["_links"] = links_imovel(imovel["id"])
+    return representacao
+
+def links_colecao():
+    return {
+        "self": {"href": request.url, "method": "GET"},
+        "create": {"href": url_for("criar_imovel"), "method": "POST"},
+    }
 
 
 @app.route('/imoveis', methods=['GET'])
@@ -14,14 +33,22 @@ def listar_imoveis():
         return jsonify({"error": "Tipo não encontrado"}), 404
     if cidade and not imoveis:
         return jsonify({"error": "Cidade não encontrada"}), 404
-    return imoveis, 200
+    return jsonify({
+        "items": [representar_imovel(imovel) for imovel in imoveis],
+        "_links": links_colecao(),
+    }), 200
 
 
 @app.route('/imoveis/<int:id>', methods=['GET'])
 def listar_imovel_por_id(id):
     imovel = utils.listar_imovel_por_id(id)
     if imovel:
-        return jsonify(imovel), 200
+        representacao = representar_imovel(imovel)
+        representacao["_links"]["collection"] = {
+            "href": url_for("listar_imoveis"),
+            "method": "GET",
+        }
+        return jsonify(representacao), 200
     else:
         return jsonify({"error": "Imóvel não encontrado"}), 404
 
@@ -31,7 +58,13 @@ def criar_imovel():
     if not all(campo in imovel for campo in campos_obrigatorios):
         return jsonify({"erro": "Campos obrigatórios: " + ", ".join(campos_obrigatorios)}), 400
     imovel_id = utils.criar_imovel(imovel)
-    return jsonify({"id": imovel_id}), 201
+    return jsonify({
+        "id": imovel_id,
+        "_links": {
+            "self": {"href": url_for("listar_imovel_por_id", id=imovel_id), "method": "GET"},
+            "collection": {"href": url_for("listar_imoveis"), "method": "GET"},
+        },
+    }), 201
 
 @app.route('/imoveis/<int:id>', methods=['PUT'])
 def atualizar_imovel(id):
@@ -41,14 +74,22 @@ def atualizar_imovel(id):
     updated_rows = utils.atualizar_imovel(id, imovel)
     if updated_rows == 0:
         return jsonify({"erro": "imovel não encontrado"}), 404
-    return jsonify({"mensagem": "imovel atualizado com sucesso"}), 200
+    return jsonify({
+        "mensagem": "imovel atualizado com sucesso",
+        "_links": links_imovel(id),
+    }), 200
 
 @app.route('/imoveis/<int:id>', methods=['DELETE'])
 def deletar_imovel(id):
     deleted_rows = utils.deletar_imovel(id)
     if deleted_rows == 0:
         return jsonify({"erro": "imovel não encontrado"}), 404
-    return jsonify({"mensagem": "imovel excluído com sucesso"}), 200
+    return jsonify({
+        "mensagem": "imovel excluído com sucesso",
+        "_links": {
+            "collection": {"href": url_for("listar_imoveis"), "method": "GET"},
+        },
+    }), 200
 
 if __name__ == '__main__':
     app.run(debug=True)

@@ -10,6 +10,14 @@ def client():
     with app.test_client() as client:
         yield client
 
+def assert_links_do_imovel(imovel, imovel_id):
+    assert imovel["_links"]["self"] == {"href": f"/imoveis/{imovel_id}", "method": "GET"}
+    assert imovel["_links"]["update"] == {"href": f"/imoveis/{imovel_id}", "method": "PUT"}
+    assert imovel["_links"]["delete"] == {"href": f"/imoveis/{imovel_id}", "method": "DELETE"}
+
+def dados_sem_links(imoveis):
+    return [{chave: valor for chave, valor in imovel.items() if chave != "_links"} for imovel in imoveis]
+
 @patch("utils.conectar_banco")
 def test_banco_vazio(mock_conectar_banco, client):
     """GET /imoveis - lista vazia."""
@@ -24,7 +32,8 @@ def test_banco_vazio(mock_conectar_banco, client):
     response = client.get("/imoveis")
 
     assert response.status_code == 200
-    assert response.get_json() == []
+    assert response.get_json()["items"] == []
+    assert response.get_json()["_links"]["create"] == {"href": "/imoveis", "method": "POST"}
 
     mock_cursor.execute.assert_called_once_with(
         "SELECT * FROM imoveis"
@@ -51,10 +60,13 @@ def test_listar_contatos_com_dados(mock_conectar_banco, client):
     response = client.get("/imoveis")
 
     assert response.status_code == 200
-    assert response.get_json() == [
+    body = response.get_json()
+    assert dados_sem_links(body["items"]) == [
         {"id": 1, "logradouro": "Nicole Common", "tipo_logradouro": "Travessa", "bairro": "Lake Danielle", "cidade": "Judymouth","cep": "85184","tipo": "casa em condominio","valor": 488423.52,"data_aquisicao": "2017-07-29"},
         {"id": 2, "logradouro": "Price Prairie", "tipo_logradouro": "Travessa", "bairro": "Colonton", "cidade": "North Garyville","cep": "93354","tipo": "Casa","valor": 500000.0,"data_aquisicao": "2023-02-20"},
     ]
+    assert_links_do_imovel(body["items"][0], 1)
+    assert_links_do_imovel(body["items"][1], 2)
 
     mock_cursor.execute.assert_called_once_with(
         "SELECT * FROM imoveis"
@@ -78,7 +90,10 @@ def test_listar_contato_id_200(mock_conectar_banco, client):
     response = client.get("/imoveis/1")
 
     assert response.status_code == 200
-    assert response.get_json() == {"id": 1, "logradouro": "Nicole Common", "tipo_logradouro": "Travessa", "bairro": "Lake Danielle", "cidade": "Judymouth", "cep": "85184", "tipo": "casa em condominio", "valor": 488423.52, "data_aquisicao": "2017-07-29"}
+    body = response.get_json()
+    assert {chave: valor for chave, valor in body.items() if chave != "_links"} == {"id": 1, "logradouro": "Nicole Common", "tipo_logradouro": "Travessa", "bairro": "Lake Danielle", "cidade": "Judymouth", "cep": "85184", "tipo": "casa em condominio", "valor": 488423.52, "data_aquisicao": "2017-07-29"}
+    assert_links_do_imovel(body, 1)
+    assert body["_links"]["collection"] == {"href": "/imoveis", "method": "GET"}
     
 
     mock_cursor.execute.assert_called_once_with(
@@ -129,7 +144,13 @@ def test_criar_imovel_ok(mock_conectar_banco, client):
     response = client.post("/imoveis", json=payload)
 
     assert response.status_code == 201
-    assert response.get_json() == {"id": 10}
+    assert response.get_json() == {
+        "id": 10,
+        "_links": {
+            "self": {"href": "/imoveis/10", "method": "GET"},
+            "collection": {"href": "/imoveis", "method": "GET"},
+        },
+    }
 
     mock_cursor.execute.assert_called_once_with(
         "INSERT INTO imoveis (logradouro, tipo_logradouro, bairro, cidade, cep, tipo, valor, data_aquisicao) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)",
@@ -164,7 +185,14 @@ def test_atualizar_imovel_ok(mock_conectar_banco, client):
     response = client.put("/imoveis/1", json=payload)
 
     assert response.status_code == 200
-    assert response.get_json() == {"mensagem": "imovel atualizado com sucesso"}
+    assert response.get_json() == {
+        "mensagem": "imovel atualizado com sucesso",
+        "_links": {
+            "self": {"href": "/imoveis/1", "method": "GET"},
+            "update": {"href": "/imoveis/1", "method": "PUT"},
+            "delete": {"href": "/imoveis/1", "method": "DELETE"},
+        },
+    }
 
     mock_cursor.execute.assert_called_once_with(
         "UPDATE imoveis SET logradouro = %s, tipo_logradouro = %s, bairro = %s, cidade = %s, cep = %s, tipo = %s, valor = %s, data_aquisicao = %s WHERE id = %s",
@@ -221,7 +249,12 @@ def test_deletar_imovel_ok(mock_conectar_banco, client):
     response = client.delete("/imoveis/1")
 
     assert response.status_code == 200
-    assert response.get_json() == {"mensagem": "imovel excluído com sucesso"}
+    assert response.get_json() == {
+        "mensagem": "imovel excluído com sucesso",
+        "_links": {
+            "collection": {"href": "/imoveis", "method": "GET"},
+        },
+    }
 
     mock_cursor.execute.assert_called_once_with(
         "DELETE FROM imoveis WHERE id = %s",
@@ -272,10 +305,12 @@ def test_listar_imovel_tipo_200(mock_conectar_banco, client):
     response = client.get("/imoveis?tipo=casa em condominio")
 
     assert response.status_code == 200
-    assert response.get_json() == [
+    body = response.get_json()
+    assert dados_sem_links(body["items"]) == [
             {"id": 1, "logradouro": "Nicole Common", "tipo_logradouro": "Travessa", "bairro": "Lake Danielle", "cidade": "Judymouth","cep": "85184","tipo": "casa em condominio","valor": 488423.52,"data_aquisicao": "2017-07-29"},
             {"id": 3, "logradouro": "Price Prairie", "tipo_logradouro": "Travessa", "bairro": "Colonton", "cidade": "North Garyville", "cep": "34567", "tipo": "casa em condominio", "valor": 600000.0, "data_aquisicao": "2022-05-21"},
         ]
+    assert body["_links"]["create"] == {"href": "/imoveis", "method": "POST"}
     
     mock_cursor.execute.assert_called_once_with(
         "SELECT * FROM imoveis WHERE tipo = %s", ("casa em condominio",)
@@ -326,10 +361,12 @@ def test_listar_imovel_cidade_200(mock_conectar_banco, client):
     response = client.get("/imoveis?cidade=Goiania")
 
     assert response.status_code == 200
-    assert response.get_json() == [
+    body = response.get_json()
+    assert dados_sem_links(body["items"]) == [
             {"id": 1, "logradouro": "Nicole Common", "tipo_logradouro": "Travessa", "bairro": "Lake Danielle", "cidade": "Goiania","cep": "85184","tipo": "casa em condominio","valor": 488423.52,"data_aquisicao": "2017-07-29"},
             {"id": 3, "logradouro": "Price Prairie", "tipo_logradouro": "Travessa", "bairro": "Colonton", "cidade": "Goiania", "cep": "34567", "tipo": "Apartamento", "valor": 600000.0, "data_aquisicao": "2022-05-21"},
         ]
+    assert body["_links"]["create"] == {"href": "/imoveis", "method": "POST"}
     
     mock_cursor.execute.assert_called_once_with(
         "SELECT * FROM imoveis WHERE cidade = %s", ("Goiania",)
