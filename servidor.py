@@ -37,5 +37,12 @@ def atualizar_imovel(id):
         return jsonify({"erro": "imovel não encontrado"}), 404
     return jsonify({"mensagem": "imovel atualizado com sucesso"}), 200
 
+@app.route('/imoveis/<int:id>', methods=['DELETE'])
+def deletar_imovel(id):
+    deleted_rows = utils.deletar_imovel(id)
+    if deleted_rows == 0:
+        return jsonify({"erro": "imovel não encontrado"}), 404
+    return jsonify({"mensagem": "imovel excluído com sucesso"}), 200
+
 if __name__ == '__main__':
     app.run(debug=True)

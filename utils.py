@@ -77,3 +77,13 @@ def atualizar_imovel(id, imovel):
     cursor.close()
     conn.close()
     return affected_rows
+
+def deletar_imovel(id):
+    conn = conectar_banco()
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM imoveis WHERE id = %s", (id,))
+    conn.commit()
+    affected_rows = cursor.rowcount
+    cursor.close()
+    conn.close()
+    return affected_rows
