@@ -264,7 +264,6 @@ def test_listar_imovel_tipo_200(mock_conectar_banco, client):
     mock_conn.cursor.return_value = mock_cursor
     mock_cursor.fetchall.return_value = [
         {"id": 1, "logradouro": "Nicole Common", "tipo_logradouro": "Travessa", "bairro": "Lake Danielle", "cidade": "Judymouth", "cep": "85184", "tipo": "casa em condominio", "valor": 488423.52, "data_aquisicao": "2017-07-29"},
-        {"id": 2, "logradouro": "Price Prairie", "tipo_logradouro": "Travessa", "bairro": "Colonton", "cidade": "North Garyville", "cep": "93354", "tipo": "Casa", "valor": 500000.0, "data_aquisicao": "2023-02-20"},
         {"id": 3, "logradouro": "Price Prairie", "tipo_logradouro": "Travessa", "bairro": "Colonton", "cidade": "North Garyville", "cep": "34567", "tipo": "casa em condominio", "valor": 600000.0, "data_aquisicao": "2022-05-21"},
     ]
 

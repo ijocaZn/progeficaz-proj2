@@ -7,7 +7,10 @@ campos_obrigatorios = ["logradouro", "tipo_logradouro", "bairro", "cidade", "cep
 
 @app.route('/imoveis', methods=['GET'])
 def listar_imoveis():
-    imoveis = utils.listar_imoveis()
+    tipo = request.args.get("tipo")
+    imoveis = utils.listar_imoveis(tipo)
+    if tipo and not imoveis:
+        return jsonify({"error": "Tipo não encontrado"}), 404
     return imoveis, 200
 
 
