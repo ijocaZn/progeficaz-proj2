@@ -15,11 +15,13 @@ def conectar_banco():
     )
     return conn
 
-def listar_imoveis(tipo=None):
+def listar_imoveis(tipo=None, cidade=None):
     conn = conectar_banco()
     cursor = conn.cursor(dictionary=True)
     if tipo:
         cursor.execute("SELECT * FROM imoveis WHERE tipo = %s", (tipo,))
+    elif cidade:
+        cursor.execute("SELECT * FROM imoveis WHERE cidade = %s", (cidade,))
     else:
         cursor.execute("SELECT * FROM imoveis")
     imoveis = cursor.fetchall()
