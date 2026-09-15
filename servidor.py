@@ -2,6 +2,8 @@ from flask import Flask, request, jsonify
 import utils
 app = Flask(__name__)
 
+campos_obrigatorios = ["logradouro", "tipo_logradouro", "bairro", "cidade", "cep", "tipo", "valor", "data_aquisicao"]
+
 
 @app.route('/imoveis', methods=['GET'])
 def listar_imoveis():
@@ -17,6 +19,13 @@ def listar_imovel_por_id(id):
     else:
         return jsonify({"error": "Imóvel não encontrado"}), 404
 
+@app.route('/imoveis', methods=['POST'])
+def criar_imovel():
+    imovel = request.get_json()
+    if not all(campo in imovel for campo in campos_obrigatorios):
+        return jsonify({"erro": "Campos obrigatórios: " + ", ".join(campos_obrigatorios)}), 400
+    imovel_id = utils.criar_imovel(imovel)
+    return jsonify({"id": imovel_id}), 201
 
 if __name__ == '__main__':
     app.run(debug=True)

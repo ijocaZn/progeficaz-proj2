@@ -114,8 +114,8 @@ def test_listar_contato_id_404(mock_conectar_banco, client):
     mock_conn.close.assert_called_once()
 
 @patch("utils.conectar_banco")
-def test_criar_contato_ok(mock_conectar_banco, client):
-    """POST /imoveis - cria contato com sucesso."""
+def test_criar_imovel_ok(mock_conectar_banco, client):
+    """POST /imoveis - cria imovel com sucesso."""
     mock_conn = MagicMock()
     mock_cursor = MagicMock()
     mock_conn.cursor.return_value = mock_cursor
@@ -132,7 +132,7 @@ def test_criar_contato_ok(mock_conectar_banco, client):
     assert response.get_json() == {"id": 10}
 
     mock_cursor.execute.assert_called_once_with(
-        "INSERT INTO imoveis (logradouro, tipo_logradouro, bairro, cidade, cep, tipo, valor, data_aquisicao) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+        "INSERT INTO imoveis (logradouro, tipo_logradouro, bairro, cidade, cep, tipo, valor, data_aquisicao) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)",
         ("Nicole Common", "Travessa", "Lake Danielle", "Judymouth", "85184", "casa em condominio", 488423.52, "2017-07-29"),
     )
     mock_conn.commit.assert_called_once()
@@ -140,7 +140,7 @@ def test_criar_contato_ok(mock_conectar_banco, client):
     mock_conn.close.assert_called_once()
 
 @patch("utils.conectar_banco")
-def test_criar_contato_erro_validacao(mock_conectar_banco, client):
+def test_criar_imovel_erro_validacao(mock_conectar_banco, client):
     """POST /imoveis - falta campo obrigatório -> 400. Não deve acessar o banco."""
     response = client.post("/imoveis", json={"cidade": "Judymouth"})
 

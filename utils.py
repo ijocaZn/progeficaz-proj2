@@ -32,3 +32,25 @@ def listar_imovel_por_id(id):
     cursor.close()
     conn.close()
     return imovel
+
+def criar_imovel(imovel):
+    conn = conectar_banco()
+    cursor = conn.cursor()
+    cursor.execute(
+        "INSERT INTO imoveis (logradouro, tipo_logradouro, bairro, cidade, cep, tipo, valor, data_aquisicao) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)",
+        (
+            imovel["logradouro"],
+            imovel["tipo_logradouro"],
+            imovel["bairro"],
+            imovel["cidade"],
+            imovel["cep"],
+            imovel["tipo"],
+            imovel["valor"],
+            imovel["data_aquisicao"]
+        )
+    )
+    conn.commit()
+    imovel_id = cursor.lastrowid
+    cursor.close()
+    conn.close()
+    return imovel_id
