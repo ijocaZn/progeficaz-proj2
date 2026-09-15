@@ -208,3 +208,48 @@ def test_atualizar_contato_erro_validacao(mock_conectar_banco, client):
 
     mock_conectar_banco.assert_not_called()
 
+@patch("utils.conectar_banco")
+def test_deletar_imovel_ok(mock_conectar_banco, client):
+    """DELETE /imoveis/<id> - deleta com sucesso."""
+    mock_conn = MagicMock()
+    mock_cursor = MagicMock()
+    mock_conn.cursor.return_value = mock_cursor
+
+    mock_cursor.rowcount = 1
+    mock_conectar_banco.return_value = mock_conn
+
+    response = client.delete("/imoveis/1")
+
+    assert response.status_code == 200
+    assert response.get_json() == {"mensagem": "imovel excluído com sucesso"}
+
+    mock_cursor.execute.assert_called_once_with(
+        "DELETE FROM imoveis WHERE id = %s",
+        (1,),
+    )
+    mock_conn.commit.assert_called_once()
+    mock_cursor.close.assert_called_once()
+    mock_conn.close.assert_called_once()
+
+@patch("utils.conectar_banco")
+def test_deletar_imovel_not_found(mock_conectar_banco, client):
+    """DELETE /imoveis/<id> - imovel não encontrado."""
+    mock_conn = MagicMock()
+    mock_cursor = MagicMock()
+    mock_conn.cursor.return_value = mock_cursor
+
+    mock_cursor.rowcount = 0
+    mock_conectar_banco.return_value = mock_conn
+
+    response = client.delete("/imoveis/999")
+
+    assert response.status_code == 404
+    assert response.get_json() == {"erro": "imovel não encontrado"}
+
+    mock_cursor.execute.assert_called_once_with(
+        "DELETE FROM imoveis WHERE id = %s",
+        (999,),
+    )
+    mock_conn.commit.assert_called_once()
+    mock_cursor.close.assert_called_once()
+    mock_conn.close.assert_called_once()
