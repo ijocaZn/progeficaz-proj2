@@ -308,3 +308,57 @@ def test_listar_imovel_tipo_404(mock_conectar_banco, client):
     mock_cursor.fetchall.assert_called_once()
     mock_cursor.close.assert_called_once()
     mock_conn.close.assert_called_once()
+
+@patch("utils.conectar_banco")
+def test_listar_imovel_cidade_200(mock_conectar_banco, client):
+    """GET /imoveis?cidade=<cidade> - cidade existe."""
+    mock_conn = MagicMock()
+    mock_cursor = MagicMock()
+
+    mock_conn.cursor.return_value = mock_cursor
+    mock_cursor.fetchall.return_value = [
+        {"id": 1, "logradouro": "Nicole Common", "tipo_logradouro": "Travessa", "bairro": "Lake Danielle", "cidade": "Goiania", "cep": "85184", "tipo": "casa em condominio", "valor": 488423.52, "data_aquisicao": "2017-07-29"},
+        {"id": 3, "logradouro": "Price Prairie", "tipo_logradouro": "Travessa", "bairro": "Colonton", "cidade": "Goiania", "cep": "34567", "tipo": "Apartamento", "valor": 600000.0, "data_aquisicao": "2022-05-21"},
+    ]
+
+    mock_conectar_banco.return_value = mock_conn
+
+    response = client.get("/imoveis?cidade=Goiania")
+
+    assert response.status_code == 200
+    assert response.get_json() == [
+            {"id": 1, "logradouro": "Nicole Common", "tipo_logradouro": "Travessa", "bairro": "Lake Danielle", "cidade": "Goiania","cep": "85184","tipo": "casa em condominio","valor": 488423.52,"data_aquisicao": "2017-07-29"},
+            {"id": 3, "logradouro": "Price Prairie", "tipo_logradouro": "Travessa", "bairro": "Colonton", "cidade": "Goiania", "cep": "34567", "tipo": "Apartamento", "valor": 600000.0, "data_aquisicao": "2022-05-21"},
+        ]
+    
+    mock_cursor.execute.assert_called_once_with(
+        "SELECT * FROM imoveis WHERE cidade = %s", ("Goiania",)
+    )
+    mock_cursor.fetchall.assert_called_once()
+    mock_cursor.close.assert_called_once()
+    mock_conn.close.assert_called_once()
+
+@patch("utils.conectar_banco")
+def test_listar_imovel_cidade_404(mock_conectar_banco, client):
+    """GET /imoveis?cidade=<cidade> - cidade nao existe."""
+    mock_conn = MagicMock()
+    mock_cursor = MagicMock()
+
+    mock_conn.cursor.return_value = mock_cursor
+    mock_cursor.fetchall.return_value = []
+
+    mock_conectar_banco.return_value = mock_conn
+
+    response = client.get("/imoveis?cidade=mogi das cruzes")
+
+    assert response.status_code == 404
+    assert response.get_json() == {
+        "error": "Cidade não encontrada"
+    }
+
+    mock_cursor.execute.assert_called_once_with(
+        "SELECT * FROM imoveis WHERE cidade = %s", ("mogi das cruzes",),
+    )
+    mock_cursor.fetchall.assert_called_once()
+    mock_cursor.close.assert_called_once()
+    mock_conn.close.assert_called_once()
