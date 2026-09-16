@@ -1,3 +1,7 @@
+# Deploy
+
+http://54.196.166.108/
+
 # Progeficaz Projeto 2 - Joaquim Aguiar e Carlos de Carli
 
 API Flask para cadastro e consulta de imoveis usando MySQL.
